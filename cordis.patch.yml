@@ -1,0 +1,20 @@
+# dsh-intent-recognition bundle patch.
+# `dsh plugin --profile <profile> add dsh-intent-recognition` applies this layer.
+- insert:
+    - id: dsh-intent-recognition
+      name: dsh-intent-recognition
+      config:
+        # PostgreSQL connection string (FALLBACK). A connection saved from the
+        # management page (意图识别 → 数据库) takes priority over this value and
+        # is persisted to the per-user config dir; edit here only if you prefer
+        # file-based provisioning. pgvector must be available (CREATE EXTENSION
+        # vector). See docker-compose.yml.
+        databaseUrl: postgres://postgres:postgres@127.0.0.1:5432/dsh_intent
+        # Embedding dimension of the configured vector model (must match the
+        # embedding model actually used; changing it requires re-embedding).
+        embeddingDim: 1024
+        # Create tables/indexes automatically on plugin load.
+        autoMigrate: true
+        # Optional bearer token protecting the management API
+        # (/dsh-intent-recognition/api/*). Empty = loopback web UI only.
+        adminToken: ''
