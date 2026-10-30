@@ -26,13 +26,12 @@ DeepSeek Harness（DSH）意图识别插件：五层流水线路由架构 + 场�
 本插件在 DSH 中分两层发挥作用：
 
 - **控制面（管理 UI）**：左侧边栏「意图识别」面板（与「插件」入口同级，可在侧边栏 More 菜单中固定/取消固定），同时保留 设置 → 意图识别 分区，两处渲染同一管理界面，用于维护意图库、配置模型、创建/运行服务。只是工具，不参与对话。
-- **数据面（被消费的服务）**：真正和 DSH 对话链路对接的部分。运行中的服务通过下面三种方式被消费：
+- **数据面（被消费的服务）**：真正和 DSH 对话链路对接的部分。运行中的服务通过下面两种方式被消费：
 
 | 消费方式 | 说明 | 适用 |
 | --- | --- | --- |
 | **Agent 工具**（推荐） | 每个运行中的服务自动注册一个工具 `intent_recognize_<服务名>`，DSH 主 Agent 可直接调用；高置信命中时工具内直接执行路由 | 用户和 DSH 对话，意图服务做分发 |
 | **Cordis 服务** | `ctx.intentRecognition.predict(service, query, context)`，供其他插件程序化调用 | 下游插件自己集成 |
-| **HTTP API** | `POST /dsh-intent-recognition/api/v1/predict`（Bearer 服务 API Key） | 外部系统 |
 
 ## 功能
 
@@ -43,6 +42,20 @@ DeepSeek Harness（DSH）意图识别插件：五层流水线路由架构 + 场�
 - **模型配置**：向量模型、Jev 模型、轻量微调模型、LLM 全部页面化配置（OpenAI 兼容接口或自定义 http JSON 接口），支持连通性测试。
 - **存储**：PostgreSQL + pgvector（向量与业务数据同库）。
 - **Agent 集成**：运行中的服务自动注册/注销 `intent_recognize_<slug>` 工具；可选向系统提示词注入当前可用意图服务清单。
+
+## 界面预览
+
+| 意图管理 | 服务管理 |
+| --- | --- |
+| ![意图管理](docs/screenshots/intent-management.png) | ![服务管理](docs/screenshots/service-management.png) |
+
+| 向量检索实验室 | 模型配置 |
+| --- | --- |
+| ![向量检索实验室](docs/screenshots/vector-lab.png) | ![模型配置](docs/screenshots/model-config.png) |
+
+| 在线测试台（五层 trace） | 会话中的 Agent 工具调用 |
+| --- | --- |
+| ![在线测试台](docs/screenshots/service-test.png) | ![Agent 工具调用](docs/screenshots/agent-tool-call.png) |
 
 ## 安装
 
@@ -220,34 +233,7 @@ score 应答可以是与 `intent_order` 等长的数组、`{scores|values|result
 
 服务的层2 配置中，「置信度阈值（最低相似度）」（`minScore`）就是切片筛选阈值——召回切片分数低于它的不会进入候选。测试服务的 trace 里，层2 现在会带 `minScore` / `topK` / `chunks`（每条原始召回切片的分数与是否过阈）/ `candidates`（聚合过滤后的结果），“召回了但没被采用”可直接定位是阈值过滤还是聚合截断；层3 trace 带 `mode`（判定方式）。
 
-## 对外 API
-
-服务启动后即可调用：
-
-```sh
-curl -X POST http://127.0.0.1:3080/dsh-intent-recognition/api/v1/predict \
-  -H "Authorization: Bearer ir_xxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "帮我查一下卡里还有多少钱", "context": []}'
-```
-
-返回：
-
-```json
-{
-  "intent": { "code": "query_balance", "name": "查询余额" },
-  "confidence": 0.93,
-  "matched_layer": "l3",
-  "route": { "type": "workflow", "target": "balance-flow", "script": "..." },
-  "trace": [ { "layer": "l1", "hit": false, "...": "..." } ],
-  "latency_ms": 41
-}
-```
-
-管理 API（供 Web UI 使用，受 `adminToken` 保护）：
-`GET/POST /scenarios`、`PUT/DELETE /scenarios/:id`、`GET/POST /scenarios/:id/intents`、`PUT/DELETE /intents/:id`、`GET /scenarios/:id/intents/export`、`POST /scenarios/:id/intents/import`、`POST /scenarios/:id/embeddings/rebuild`、`GET/POST /models`、`PUT/DELETE /models/:id`、`POST /models/:id/test`、`GET/POST /services`、`POST /services/:id/start|stop|copy`、`POST /services/:id/predict`、`GET /services/:id/logs`。
-
-### 其他插件程序化调用
+## 其他插件程序化调用
 
 ```ts
 // 在其他 dsh 插件的 apply(ctx) 中

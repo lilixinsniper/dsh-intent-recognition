@@ -1,0 +1,10 @@
+{
+  "screenshots": [
+    "docs/screenshots/intent-management.png",
+    "docs/screenshots/service-management.png",
+    "docs/screenshots/vector-lab.png",
+    "docs/screenshots/model-config.png",
+    "docs/screenshots/service-test.png",
+    "docs/screenshots/agent-tool-call.png"
+  ]
+}

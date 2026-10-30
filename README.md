@@ -24,13 +24,12 @@ User query
 ## Control plane + data plane
 
 - **Control plane (management UI)**: the **Intent Recognition** sidebar panel (same level as the Plugins entry; pin/unpin from the sidebar's More menu), plus a Settings → Intent Recognition section — both render the same management UI. Tooling only; it never joins the conversation.
-- **Data plane (consumable services)**: a running service can be consumed three ways:
+- **Data plane (consumable services)**: a running service can be consumed two ways:
 
 | Channel | Notes | Best for |
 | --- | --- | --- |
 | **Agent tool** (recommended) | each running service registers `intent_recognize_<service-slug>`; high-confidence hits execute the route inside the tool | DSH main agent routing user turns |
 | **Cordis service** | `ctx.intentRecognition.predict(service, query, context)` for other plugins | programmatic integration |
-| **HTTP API** | `POST /dsh-intent-recognition/api/v1/predict` (Bearer service API key) | external systems |
 
 ## Features
 
@@ -41,6 +40,20 @@ User query
 - **Model configuration**: embedding, Jev, fine-tuned and LLM models are all page-configured (OpenAI-compatible or plain http JSON endpoints), with connectivity tests.
 - **Storage**: PostgreSQL + pgvector (vectors and business data in one database).
 - **Agent integration**: running services register/revoke `intent_recognize_<slug>` tools automatically; optionally contributes a system-prompt section listing available intent services.
+
+## Screenshots
+
+| Intent management | Service management |
+| --- | --- |
+| ![Intent management](docs/screenshots/intent-management.png) | ![Service management](docs/screenshots/service-management.png) |
+
+| Vector lab | Model configuration |
+| --- | --- |
+| ![Vector lab](docs/screenshots/vector-lab.png) | ![Model configuration](docs/screenshots/model-config.png) |
+
+| Test console (five-layer trace) | Agent tool call in a chat |
+| --- | --- |
+| ![Test console](docs/screenshots/service-test.png) | ![Agent tool call](docs/screenshots/agent-tool-call.png) |
 
 ## Install
 
@@ -201,16 +214,9 @@ The **Vector Lab** tab answers "why was recall wrong for this question":
 
 Slices carry model provenance (`model_id`); after switching embedding models or editing examples, rebuild — otherwise old and new slices live in incompatible vector spaces.
 
-## Inference API
+## Programmatic access
 
-```sh
-curl -X POST http://127.0.0.1:3080/dsh-intent-recognition/api/v1/predict \
-  -H "Authorization: Bearer ir_xxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "how much money is left on my card", "context": []}'
-```
-
-Programmatic access from another plugin:
+From another dsh plugin's `apply(ctx)`:
 
 ```ts
 const ir = ctx.get('intentRecognition');
